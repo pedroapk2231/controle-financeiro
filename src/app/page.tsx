@@ -1,63 +1,102 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
+import React, { useEffect, useState } from 'react';
+import { db } from '../firebase/firebase';
+import { collection, addDoc, onSnapshot } from 'firebase/firestore';
 
 interface Registro {
-  nome: string
-  valor: string
-  descricao: string
+  id: string;
+  nome: string;
+  valor: string;
+  descricao: string;
 }
 
 export default function Home() {
-  const [form, setForm] = useState<Registro>({ nome: '', valor: '', descricao: '' })
-  const [registros, setRegistros] = useState<Registro[]>([])
+  const [form, setForm] = useState({
+    nome: '',
+    valor: '',
+    descricao: '',
+  });
+
+  const [registros, setRegistros] = useState<Registro[]>([]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
-  }
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setRegistros([...registros, form])
-    setForm({ nome: '', valor: '', descricao: '' })
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await addDoc(collection(db, 'registros'), form);
+      alert('Registro salvo com sucesso!');
+      setForm({ nome: '', valor: '', descricao: '' });
+    } catch (error) {
+      console.error('Erro ao salvar:', error);
+      alert('Erro ao salvar o registro.');
+    }
+  };
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, 'registros'), (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Registro[];
+
+      setRegistros(data);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   return (
-    <main className="p-4">
+    <main className="p-6 max-w-md mx-auto">
       <h1 className="text-2xl font-bold mb-4">Controle Financeiro</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 mb-8">
         <input
-          className="border p-2 w-full"
-          placeholder="Nome"
+          type="text"
           name="nome"
+          placeholder="Nome"
           value={form.nome}
           onChange={handleChange}
+          className="border p-2 rounded"
+          required
         />
         <input
-          className="border p-2 w-full"
-          placeholder="Valor"
+          type="text"
           name="valor"
+          placeholder="Valor"
           value={form.valor}
           onChange={handleChange}
+          className="border p-2 rounded"
+          required
         />
         <textarea
-          className="border p-2 w-full"
-          placeholder="Descrição"
           name="descricao"
+          placeholder="Descrição"
           value={form.descricao}
           onChange={handleChange}
+          className="border p-2 rounded"
+          required
         />
-        <button type="submit" className="bg-blue-500 text-white p-2 rounded">Adicionar</button>
+        <button type="submit" className="bg-blue-600 text-white p-2 rounded">
+          Salvar
+        </button>
       </form>
 
-      <ul className="mt-6 space-y-2">
-        {registros.map((item, index) => (
-          <li key={index} className="border p-2 rounded">
-            <strong>{item.nome}</strong>: R$ {item.valor} — {item.descricao}
-          </li>
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Registros:</h2>
+        {registros.map((registro) => (
+          <div key={registro.id} className="border p-3 rounded shadow-sm">
+            <p><strong>Nome:</strong> {registro.nome}</p>
+            <p><strong>Valor:</strong> {registro.valor}</p>
+            <p><strong>Descrição:</strong> {registro.descricao}</p>
+          </div>
         ))}
-      </ul>
+      </div>
     </main>
-  )
+  );
 }
+
 
