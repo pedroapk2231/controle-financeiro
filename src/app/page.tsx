@@ -2,9 +2,15 @@
 
 import { useState } from 'react'
 
+interface Registro {
+  nome: string
+  valor: string
+  descricao: string
+}
+
 export default function Home() {
-  const [form, setForm] = useState({ nome: '', valor: '', descricao: '' })
-  const [registros, setRegistros] = useState([])
+  const [form, setForm] = useState<Registro>({ nome: '', valor: '', descricao: '' })
+  const [registros, setRegistros] = useState<Registro[]>([])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -54,3 +60,4 @@ export default function Home() {
     </main>
   )
 }
+
